@@ -1,0 +1,17 @@
+<resources>
+    <string name="app_name">OnlyUsableAssignment</string>
+    <string name="allow_permission">Allow Permission</string>
+    <string name="allow_permission_text">First allow permissions by clicking on above button</string>
+    <string name="stop_service">Stop Service</string>
+    <string name="shared_pref">OnlyUsablePref</string>
+    <string name="isServiceEnabled">isServiceEnabled</string>
+    <string name="show_views">Show Views</string>
+    <string name="clear_views">Clear Views</string>
+    <string name="dialogue_positive_button">Ok</string>
+    <string name="dialogue_title">Drawing Rectangle</string>
+    <string name="dialogue_message">Are you sure about drawing rect?</string>
+    <string name="foreground_Notification_channel_id">foreground_service</string>
+    <string name="foreground_Notification_channel_name">Accessibility of UI</string>
+    <string name="foreground_service_title">Only Usable</string>
+    <string name="foreground_service_text">Showing Only Usable UI</string>
+</resources>
