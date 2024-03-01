@@ -1,10 +1,12 @@
 package com.example.onlyusableassignment.services
 
 import android.accessibilityservice.AccessibilityService
+import android.annotation.SuppressLint
 import android.content.Intent
 import android.content.SharedPreferences
 import android.graphics.PixelFormat
 import android.graphics.Rect
+import android.os.Build
 import android.os.Looper
 import android.view.View
 import android.view.WindowManager
@@ -14,6 +16,7 @@ import android.widget.ProgressBar
 import android.os.Handler
 import android.util.Log
 import android.view.Gravity
+import android.widget.Button
 import android.widget.Toast
 import com.example.onlyusableassignment.R
 
@@ -23,6 +26,7 @@ class MyAccessibilityService : AccessibilityService() {
     private val windowManager:WindowManager by lazy { getSystemService(WINDOW_SERVICE) as WindowManager }
 
     private val nodesToDraw: HashSet<AccessibilityNodeInfo> = HashSet()
+    private lateinit var clearViewsButton: Button
     private val newRectangleView: MutableList<View> = mutableListOf()
     private val rectangleViews:MutableList<View> = mutableListOf()
 
@@ -54,7 +58,6 @@ class MyAccessibilityService : AccessibilityService() {
                 val root = rootInActiveWindow
                 if(root==null){
                     hideProgressBar()
-//                    Toast.makeText(this,"Please Change the Screen",Toast.LENGTH_SHORT).show()
                 }
 
                 Log.d(TAG, "onAccessibilityEvent: root = $root")
@@ -78,6 +81,12 @@ class MyAccessibilityService : AccessibilityService() {
                     hideProgressBar()
 
 
+                    //Wait for 3 sec
+                    handler.postDelayed({
+                        showClearViewsButton()
+                    },3000)
+
+
                 }
             },2000)
         }
@@ -86,6 +95,38 @@ class MyAccessibilityService : AccessibilityService() {
 
     }
 
+    @SuppressLint("ResourceType")
+    private fun showClearViewsButton() {
+        clearViewsButton = Button(this)
+        clearViewsButton.text = getString(R.string.clear_views)
+        clearViewsButton.setOnClickListener{
+           clearExistingRect()
+            windowManager.removeView(clearViewsButton)
+        }
+        setWindowManager(clearViewsButton)
+    }
+
+    private fun setWindowManager(button: Button){
+        //Parameters for floating button view
+        val params = WindowManager.LayoutParams(
+            WindowManager.LayoutParams.WRAP_CONTENT,
+            WindowManager.LayoutParams.WRAP_CONTENT,
+            if (Build.VERSION.SDK_INT>= Build.VERSION_CODES.O){
+                WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY
+            }else{
+                WindowManager.LayoutParams.TYPE_PHONE
+            },
+            WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE,
+            PixelFormat.TRANSLUCENT
+        )
+
+        //Set gravity to No Position to position it anywhere on the window
+        params.gravity = Gravity.TOP or Gravity.END
+
+
+        //Add button to windowManager
+        windowManager.addView(button,params)
+    }
     override fun onInterrupt() {
         //Handle Interruption
         Log.d(TAG, "onInterrupt: MyAccessibilityService is interrupted")
@@ -94,19 +135,18 @@ class MyAccessibilityService : AccessibilityService() {
 
     override fun onDestroy() {
         super.onDestroy()
-        Log.d(TAG, "onDestroy: Accessibility service is destroyed")
     }
     override fun onServiceConnected() {
+        clearViewsButton = Button(this)
+        clearExistingRect()
         super.onServiceConnected()
 
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
 
-
         sharedPref.edit().putBoolean(getString(R.string.isServiceEnabled),true).apply()
-                showProgressBar()
-
+        showProgressBar()
         return super.onStartCommand(intent, flags, startId)
     }
 
@@ -114,7 +154,6 @@ class MyAccessibilityService : AccessibilityService() {
         //Base case 1
         if(depth>=15){
             //Add current node
-//            nodesToDraw.add(nodeInfo)
             Log.d(TAG, "traverseAccessibility: Reached to base case")
             return
         }
@@ -145,15 +184,6 @@ class MyAccessibilityService : AccessibilityService() {
 
         //clear nodesToDraw list
         nodesToDraw.clear()
-
-        handler.postDelayed({
-            //Remove previously drawn rectangles from the screen
-            clearExistingRect()
-
-            //set service enable status to false
-            sharedPref.edit().putBoolean(getString(R.string.isServiceEnabled), false).apply()
-
-        },3000)
 
     }
 
@@ -198,8 +228,9 @@ class MyAccessibilityService : AccessibilityService() {
             rect.height()-25,
             rect.left,
             rect.top - 25,
-            WindowManager.LayoutParams.TYPE_ACCESSIBILITY_OVERLAY,
-            WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE,
+//            WindowManager.LayoutParams.TYPE_ACCESSIBILITY_OVERLAY,
+            WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
+            WindowManager.LayoutParams.FLAG_LOCAL_FOCUS_MODE,
             PixelFormat.TRANSLUCENT
         )
         
@@ -250,5 +281,7 @@ class MyAccessibilityService : AccessibilityService() {
             windowManager.removeView(it)
             progressBar = null
         }
+        sharedPref.edit().putBoolean(getString(R.string.isServiceEnabled),false).apply()
     }
+
 }
